@@ -9,10 +9,11 @@ unsigned long lastMillis = 0;
 unsigned long timeCount = 0;
 unsigned long unitCount = 0;
 
+
 void setup() {
   pinMode(IR_PIN, INPUT);
 
-  lcd.init();
+  lcd.init(); 
   lcd.backlight();
 
   lcd.setCursor(0, 0);

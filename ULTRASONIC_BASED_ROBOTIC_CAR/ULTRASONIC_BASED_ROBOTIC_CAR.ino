@@ -1,4 +1,3 @@
-
 #include  <NewPing.h>        //Ultrasonic sensor function library. You must install this library
 #include  <Servo.h>          //Servo motor library. This is standard library
 
