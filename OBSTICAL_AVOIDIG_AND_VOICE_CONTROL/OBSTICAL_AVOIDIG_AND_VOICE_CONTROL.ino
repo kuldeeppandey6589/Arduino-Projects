@@ -10,7 +10,7 @@
 #define spoint 103
 char value;
 int distance;
-int Left;
+int Left; 
 int Right;
 int L = 0;
 int R = 0;

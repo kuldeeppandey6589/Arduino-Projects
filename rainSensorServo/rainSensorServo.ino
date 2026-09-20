@@ -2,7 +2,7 @@
 
 const int rainSensor = A0;
 const int buzzer = 2;
-const int servoPin = 3;0
+const int servoPin = 3;
 
 Servo servo;
 bool lastStateIsRaining = false;

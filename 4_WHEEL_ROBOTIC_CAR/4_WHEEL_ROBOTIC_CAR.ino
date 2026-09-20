@@ -7,13 +7,13 @@
 
    CODE CREATED BY - AMEYA ANGADI
    LAST MODIFIED ON - 26/07/2024
-   VERSION - 1.3
+   VERSION - 1.3..,/.; mn 
 */
 
 #define led1 = 13
 #define in1 = 12
 #define in2 = 11
-#define in3 = 10
+#define in3 = 10 
 #define in4 = 9
 
 void setup() {
