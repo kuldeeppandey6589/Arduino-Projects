@@ -10,18 +10,18 @@ SoftwareSerial sim800l(2, 3); // RX = Pin 2 (Connect to SIM800L TX), TX = Pin 3 
 SoftwareSerial gpsSerial(0, 1); // RX = Pin 10 (Connect to GPS TX), TX = Pin 11 (Connect to GPS RX)
 
 // **REASSIGNED MOTOR PINS TO FREE UP SERIAL PINS**
-const int in1 = 10;
-const int in2 = 11;
-const int in3 = 12;
-const int in4 = 13;
+const int in1 = 7;
+const int in2 = 8;
+const int in3 = 9;
+const int in4 = 10;
 
 // Ultrasonic Sensor pins
-const int trigPin = 8;
-const int echoPin = 9;
+const int trigPin = A0;
+const int echoPin = A1;
 
 // IR Sensor pins
-const int irPin1 = 6;
-const int irPin2 = 7;
+const int irPin1 = 4;
+const int irPin2 = 6;
 
 // Buzzer pin
 const int buzzerPin = 5;

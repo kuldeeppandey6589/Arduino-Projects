@@ -1,144 +1,274 @@
 #include <SoftwareSerial.h>
 
-SoftwareSerial sim800(10, 11); 
-// Arduino D10 = RX  connect to SIM800L TX
-// Arduino D11 = TX  connect to SIM800L RX through voltage divider
+SoftwareSerial sim800(7, 8);   // Arduino RX, TX
 
-String phoneNumber = "+919999999999";  // Change your number
+// =================================================
+// SETUP
+// =================================================
 
 void setup() {
+
   Serial.begin(9600);
   sim800.begin(9600);
 
-  Serial.println("SIM800L Test Started");
   delay(3000);
 
-  sendAT("AT", 2000);
-  sendAT("ATE0", 2000);
-  sendAT("AT+CPIN?", 2000);
-  sendAT("AT+CSQ", 2000);
-  sendAT("AT+CREG?", 2000);
-  sendAT("AT+CMGF=1", 2000);
+  Serial.println(F(""));
+  Serial.println(F("================================"));
+  Serial.println(F("       SIM800L TEST"));
+  Serial.println(F("================================"));
+  Serial.println(F(""));
 
-  sendSMS(phoneNumber, "Hello, SIM800L test SMS from Arduino");
+  // -----------------------------------------------
+  // 1. AT TEST
+  // -----------------------------------------------
+
+  Serial.println(F("[1] Testing SIM800L..."));
+
+  if (sendCommand("AT", 3000)) {
+
+    Serial.println(F("OK - SIM800L is responding"));
+
+  } else {
+
+    Serial.println(F("ERROR - SIM800L not responding"));
+    Serial.println(F(""));
+    Serial.println(F("CHECK:"));
+    Serial.println(F("1. SIM800L power"));
+    Serial.println(F("2. VCC should be about 4V"));
+    Serial.println(F("3. Power supply current"));
+    Serial.println(F("4. TX/RX wiring"));
+    Serial.println(F("5. Common GND"));
+    Serial.println(F("6. Baud rate"));
+    Serial.println(F(""));
+
+    return;
+  }
+
+
+  // -----------------------------------------------
+  // 2. ECHO OFF
+  // -----------------------------------------------
+
+  Serial.println(F("[2] Turning echo OFF..."));
+
+  sim800.println(F("ATE0"));
+  delay(500);
+
+  clearBuffer();
+
+
+  // -----------------------------------------------
+  // 3. MODULE INFORMATION
+  // -----------------------------------------------
+
+  Serial.println(F("[3] Module information"));
+
+  sim800.println(F("ATI"));
+
+  readResponse(3000);
+
+
+  // -----------------------------------------------
+  // 4. SIM CARD
+  // -----------------------------------------------
+
+  Serial.println(F(""));
+  Serial.println(F("[4] Checking SIM card..."));
+
+  sim800.println(F("AT+CPIN?"));
+
+  if (waitFor("READY", 5000)) {
+
+    Serial.println(F("OK - SIM card is READY"));
+
+  } else {
+
+    Serial.println(F("ERROR - SIM card problem"));
+    Serial.println(F("Check SIM insertion / SIM PIN"));
+  }
+
+
+  // -----------------------------------------------
+  // 5. SIGNAL
+  // -----------------------------------------------
+
+  Serial.println(F(""));
+  Serial.println(F("[5] Checking signal..."));
+
+  sim800.println(F("AT+CSQ"));
+
+  readResponse(3000);
+
+
+  // -----------------------------------------------
+  // 6. NETWORK REGISTRATION
+  // -----------------------------------------------
+
+  Serial.println(F(""));
+  Serial.println(F("[6] Checking network registration..."));
+
+  sim800.println(F("AT+CREG?"));
+
+  readResponse(3000);
+
+
+  // -----------------------------------------------
+  // 7. OPERATOR
+  // -----------------------------------------------
+
+  Serial.println(F(""));
+  Serial.println(F("[7] Checking network operator..."));
+
+  sim800.println(F("AT+COPS?"));
+
+  readResponse(5000);
+
+
+  // -----------------------------------------------
+  // 8. SMS MODE
+  // -----------------------------------------------
+
+  Serial.println(F(""));
+  Serial.println(F("[8] Setting SMS text mode..."));
+
+  sim800.println(F("AT+CMGF=1"));
+
+  if (waitFor("OK", 3000)) {
+
+    Serial.println(F("OK - SMS mode enabled"));
+
+  } else {
+
+    Serial.println(F("ERROR - SMS mode failed"));
+  }
+
+
+  // -----------------------------------------------
+  // COMPLETE
+  // -----------------------------------------------
+
+  Serial.println(F(""));
+  Serial.println(F("================================"));
+  Serial.println(F("       TEST COMPLETE"));
+  Serial.println(F("================================"));
+  Serial.println(F(""));
+  Serial.println(F("Type AT commands in Serial Monitor."));
 }
+
+
+// =================================================
+// LOOP
+// =================================================
 
 void loop() {
-  // Read SIM800L response and print on Serial Monitor
-  while (sim800.available()) {
-    Serial.write(sim800.read());
+
+  // Arduino -> SIM800L
+
+  if (Serial.available()) {
+
+    while (Serial.available()) {
+
+      char c = Serial.read();
+
+      sim800.write(c);
+    }
   }
 
-  // Send command from Serial Monitor to SIM800L
-  while (Serial.available()) {
-    sim800.write(Serial.read());
+  // SIM800L -> Arduino
+
+  if (sim800.available()) {
+
+    while (sim800.available()) {
+
+      Serial.write(sim800.read());
+    }
   }
 }
 
-void sendAT(String command, int waitTime) {
-  Serial.print("Sending: ");
-  Serial.println(command);
+
+// =================================================
+// SEND COMMAND
+// =================================================
+
+bool sendCommand(const char *command, unsigned long timeout) {
+
+  clearBuffer();
 
   sim800.println(command);
-  delay(waitTime);
 
-  while (sim800.available()) {
-    Serial.write(sim800.read());
+  return waitFor("OK", timeout);
+}
+
+
+// =================================================
+// WAIT FOR RESPONSE
+// =================================================
+
+bool waitFor(const char *target, unsigned long timeout) {
+
+  unsigned long start = millis();
+
+  uint8_t matched = 0;
+
+  while (millis() - start < timeout) {
+
+    if (sim800.available()) {
+
+      char c = sim800.read();
+
+      Serial.write(c);
+
+      if (c == target[matched]) {
+
+        matched++;
+
+        if (target[matched] == '\0') {
+
+          return true;
+        }
+
+      } else {
+
+        matched = 0;
+      }
+    }
+  }
+
+  return false;
+}
+
+
+// =================================================
+// READ RESPONSE
+// =================================================
+
+void readResponse(unsigned long timeout) {
+
+  unsigned long start = millis();
+
+  while (millis() - start < timeout) {
+
+    while (sim800.available()) {
+
+      Serial.write(sim800.read());
+
+      start = millis();
+    }
   }
 
   Serial.println();
 }
 
-void sendSMS(String number, String message) {
-  Serial.println("Sending SMS...");
 
-  sim800.println("AT+CMGF=1");
-  delay(1000);
+// =================================================
+// CLEAR SERIAL BUFFER
+// =================================================
 
-  sim800.print("AT+CMGS=\"");
-  sim800.print(number);
-  sim800.println("\"");
-  delay(1000);
-
-  sim800.print(message);
-  delay(500);
-
-  sim800.write(26);   // CTRL+Z
-  delay(7000);
+void clearBuffer() {
 
   while (sim800.available()) {
-    Serial.write(sim800.read());
+
+    sim800.read();
   }
-
-  Serial.println("SMS function complete");
 }
-
-// #include <HardwareSerial.h>
-
-// // SIM800L pins
-// // SIM800L TX -> ESP32 GPIO16
-// // SIM800L RX -> ESP32 GPIO17
-// #define SIM800_RX 16
-// #define SIM800_TX 17
-
-// HardwareSerial sim800(1);
-
-// // Change this mobile number
-// String phoneNumber = "+918960383086";
-
-// // Default message
-// String defaultMessage = "Hello, this is ESP32 SIM800L test message.";
-
-// unsigned long lastSmsTime = 0;
-// const unsigned long smsInterval = 2000;  // 2 seconds
-
-// void setup() {
-//   Serial.begin(115200);
-//   delay(1000);
-
-//   sim800.begin(9600, SERIAL_8N1, SIM800_RX, SIM800_TX);
-//   delay(3000);
-
-//   Serial.println("SIM800L SMS Test Started");
-
-//   sendAT("AT", 1000);
-//   sendAT("AT+CMGF=1", 1000);       // SMS text mode
-//   sendAT("AT+CSCS=\"GSM\"", 1000); // GSM character set
-// }
-
-// void loop() {
-//   if (millis() - lastSmsTime >= smsInterval) {
-//     lastSmsTime = millis();
-
-//     sendSMS(phoneNumber, defaultMessage);
-//   }
-// }
-
-// void sendAT(String command, int waitTime) {
-//   sim800.println(command);
-//   delay(waitTime);
-
-//   while (sim800.available()) {
-//     Serial.write(sim800.read());
-//   }
-// }
-
-// void sendSMS(String number, String message) {
-//   Serial.println("Sending SMS...");
-
-//   sim800.println("AT+CMGF=1");
-//   delay(1000);
-
-//   sim800.print("AT+CMGS=\"");
-//   sim800.print(number);
-//   sim800.println("\"");
-//   delay(1000);
-
-//   sim800.print(message);
-//   delay(500);
-
-//   sim800.write(26);  // CTRL + Z
-//   delay(5000);
-
-//   Serial.println("SMS Sent");
-// }

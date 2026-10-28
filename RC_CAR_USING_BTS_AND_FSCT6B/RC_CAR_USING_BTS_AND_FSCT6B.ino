@@ -25,9 +25,9 @@
 // ==========================
 // Settings
 // ==========================
-#define MIN_PULSE 1120
-#define MID_PULSE 1410
-#define MAX_PULSE 1762
+#define MIN_PULSE 1150
+#define MID_PULSE 1490
+#define MAX_PULSE 1870
 
 #define DEADZONE 40          // joystick center dead zone
 #define SIGNAL_TIMEOUT 30000 // microseconds

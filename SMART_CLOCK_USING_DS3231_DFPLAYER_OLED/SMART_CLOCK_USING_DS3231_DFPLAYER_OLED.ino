@@ -30,13 +30,6 @@ uint8_t oledAddress = 0x3C;
 
 RTC_DS3231 rtc;
 
-// =====================================================
-// DFPLAYER MINI
-//
-// Arduino Nano:
-// D10 = RX  <- DFPlayer TX
-// D11 = TX  -> DFPlayer RX
-//
 // Use about 1K resistor between
 // Nano D11 and DFPlayer RX
 // =====================================================
